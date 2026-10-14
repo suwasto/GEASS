@@ -2,8 +2,8 @@
 
 Status: ready-for-agent
 Label: ready-for-agent
-Version: 1
-Date: 2026-10-14 (Asia/Jakarta)
+Version: 2
+Date: 2026-10-15 (Asia/Jakarta)
 Parent: [Resolved GEASS wayfinder map](map.md)
 
 This is an implementation specification, not an implementation ticket or permission to provision cloud resources. Work starts with the readiness gate. The map remains the index of architecture decisions; this specification defines observable product behavior.
@@ -148,7 +148,7 @@ Public reads use a sanitized approved projection, never the raw analytical/priva
 
 Provide PPID request and APIP/BPK brief as downloadable Markdown drafts. Include the reviewed version, planning/tender identifiers where known, source locators, calculations, assumptions, counterevidence, unresolved issues and draft status. Recipient/sender fields remain human-completed where not evidenced; nothing is sent or filed automatically. Validate legal/template references before representing the wording as appropriate for public use.
 
-Indonesian is the default demo UI and dossier language; use localized labels and IDR formatting. Show facts, AI-supported interpretation and evidence gaps distinctly. The initial visual direction follows the PRD's dense dark table and forensic detail panel; detailed visual design is not locked by this spec. Meet keyboard navigation, visible focus, readable contrast, labeled controls and a graph alternative; never communicate risk by color alone. Escape all source/model text and restrict citation destinations to permitted web links.
+English is the default demo UI and draft-dossier language following the user's redesign request on 2026-10-15; preserve official Indonesian source-system names and source text, and format amounts as IDR. Show facts, AI-supported interpretation and evidence gaps distinctly. The proposed visual direction is a neutral document workspace with a charcoal sidebar, an asymmetric ledger/case spotlight, and a source rail; detailed visual design remains a proposal. Meet keyboard navigation, visible focus, readable contrast, labeled controls and a graph alternative; never communicate risk by color alone. Escape all source/model text and restrict citation destinations to permitted web links.
 
 Trace run/stage identity, safe outcomes, durations, selected model and rule versions, and budget-relevant usage. Exclude credentials, private personal/source content and private chain-of-thought. A public demo inspector exposes only sanitized summaries; cloud-console captures remain separate proof. Record actual deployed revision and successful API/query/model/security evidence, not just screenshots of configured services.
 

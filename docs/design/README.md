@@ -1,70 +1,68 @@
-# GEASS UI draft — Evidence desk
+# GEASS design 02 — Evidence workspace
 
-Status: design proposal, 2026-10-14. Open [the interactive preview](preview.html) in a browser. It works from disk, has no dependencies or external requests, and contains synthetic data only. It does not create the React/Vite application, authenticate anyone, publish a finding, or execute analysis.
+Status: design proposal, 2026-10-15. Redesigned with the **design-taste-frontend** skill following the user's English-language request. Open [the interactive preview](preview.html) in a browser. All records and source locators are synthetic; there are no external requests or backend integrations.
 
-![Static radar concept, with synthetic records](radar-concept.png)
+![Static English radar concept](radar-concept.png)
 
-This is a static concept rendering rather than a browser screenshot. The HTML includes the case investigation and reviewer workspace as well as the radar.
+This is a static concept rendering, not a browser screenshot. The HTML also contains the investigation and reviewer screens.
 
-## Direction
+## Design direction
 
-1. Help journalists and inspectors move from a procurement lead to inspectable evidence.
-2. Tone: deliberate, factual, restrained. Indonesian product language.
-3. Layout: horizontal workspace navigation, dense public radar, full-width investigation, private review desk.
-4. Typography: system sans-serif for readable evidence; system monospace for identifiers, amounts and source locators. No font download.
-5. Surfaces: ink navy canvas, slate panels, warm-white type, amber signals, mint verified observations. No glowing risk badges or decorative gradients.
-6. Motion: short state changes only; honor reduced motion. No animated surveillance theater.
-7. Signature: an **evidence rail** that follows each finding from planning capture to benchmark, execution coverage, and review. Gaps are visible beside the claim rather than buried in a disclaimer.
+- **Audience:** journalists, civic watchdogs and inspectors following evidence-backed procurement leads.
+- **Character:** a restrained investigation workspace, with the emphasis on legible documents and source boundaries.
+- **Layout:** charcoal workspace sidebar; pale ledger; asymmetric sample-case spotlight. Case detail becomes a continuous evidence document with an unboxed source rail. Metrics use inline dividers rather than three equal cards.
+- **Typography:** sans-serif only. Geist / Geist Mono are preferred local fonts, with Segoe UI / Consolas fallbacks; no font downloads or dependencies. The title is 36 px on desktop and 30 px on mobile.
+- **Palette:** neutral surfaces and one muted green accent. Evidence states are communicated by words and contrast, not separate traffic-light colors.
+- **Motion:** short pressed/hover feedback and a layout-sized loading skeleton. Reduced-motion preference disables animation. Existing bounded-analysis and accessibility decisions take precedence over the skill's decorative perpetual-motion suggestions.
+- **Signature:** a case spotlight pairs a measurable difference with its unresolved question; the evidence rail keeps every source and gap beside the finding.
 
-## Authority and scope
+The user requested a draft rather than application creation. This remains dependency-free HTML/CSS/JavaScript; the later application is still the accepted React/TypeScript/Vite stack. No React, Tailwind or icon package is installed for this prototype. Icons are small SVG primitives with consistent 1.5 px strokes.
 
-- [Demo specification](../../.scratch/geass-wayfinding/spec.md) governs behavior; [build plan](../geass-build-plan.md) governs sequence.
-- [Focused demo](../adr/0001-focused-evidence-demo.md): no invented national counts, authentic case claims, or committed region.
-- [One deployment](../adr/0002-google-cloud-single-deployment.md): later implementation is React/TypeScript/Vite with FastAPI on Cloud Run. This dependency-free HTML is a throwaway review artifact.
-- [Human review](../adr/0003-review-before-publication.md): private drafts and public approved versions are distinct. Reviewer navigation here is a labeled role simulation, not authentication.
-- [Bounded analysis](../adr/0004-bounded-resumable-analysis.md): public reading never triggers analysis; inspector reports simulated stages only.
-- [Evidence abstention](../adr/0005-evidence-and-deterministic-signals.md): insufficient evidence and not assessed remain distinct from normal.
-- [SQL graph and Markdown](../adr/0006-sql-graph-and-draft-dossiers.md): observed edges, accessible relation table, draft downloads; no ownership inference or PDF action.
+## Authority
 
-## Screen and interaction inventory
+[Specification](../../.scratch/geass-wayfinding/spec.md) and [build plan](../geass-build-plan.md) govern behavior and sequence. The six ADRs remain intact:
 
-| Screen | Hierarchy | Draft interactions |
+- [Focused demo](../adr/0001-focused-evidence-demo.md): synthetic scope is clearly disclosed; no real regional case or national coverage is claimed.
+- [Cloud Run web stack](../adr/0002-google-cloud-single-deployment.md): the HTML is a review artifact, not app scaffolding.
+- [Review before publication](../adr/0003-review-before-publication.md): private drafts and reviewed public fixtures stay distinct.
+- [Bounded batch analysis](../adr/0004-bounded-resumable-analysis.md): browsing never runs inference; the inspector is explicitly simulated.
+- [Evidence abstention](../adr/0005-evidence-and-deterministic-signals.md): missing evidence does not become normal or an invented price difference.
+- [SQL edges / draft dossiers](../adr/0006-sql-graph-and-draft-dossiers.md): observed relationships do not establish ownership; downloads are Markdown drafts, never automatic submissions.
+
+## Screen map
+
+| Surface | Hierarchy | Draft interactions |
 | --- | --- | --- |
-| Radar publik | Scope → approved record counts → labeled search/filters → table → pagination | Search/filter synthetic records; open a case; loading/empty/error state controls |
-| Penelusuran kasus | Version/status → planning ceiling and coverage → evidence rail → benchmark/counterevidence → execution graph → draft action | Source locator dialog; accessible graph table; benchmark abstention; draft preview and Markdown sample download |
-| Ruang reviewer | Role simulation → selected draft version → evidence/review readiness → decision reason → approve/reject actions | Simulate a local decision; approval requires a reason and complete reviewable evidence; reset demo |
-| Inspector | Stage outcomes and integration boundary | Expand simulated pipeline; no Cloud Console links or private traces |
+| Public radar | Scope → inline coverage summary → ledger and case spotlight | Search, agency/evidence filters, case selection, populated/loading/empty/error previews |
+| Case investigation | Reviewed version → planning facts → comparison and counterevidence → vendor observations | Source dialogs, insufficient-evidence state, graph with table equivalent, separate PPID / audit sample downloads |
+| Evidence trail | Planning → applicable benchmark → verified execution link → review | Explicit gaps; inspector changes with available case coverage |
+| Review workspace | Private draft → readiness → arguments → exact-version decision | Required note, local approve/reject feedback, reset; labeled role simulation |
 
-The public radar includes reviewed synthetic records with supported and insufficient-evidence states; it does not expose the private draft. Local reviewer actions deliberately do not mutate the public radar: the preview illustrates review feedback, not a publication backend. Real implementation binds approval to an exact version and invalidates public/download access on withdrawal.
+The public fixture list excludes the private reviewer draft. Simulated review does not modify the public radar or submit a server record. The real implementation must enforce authentication, role checks, version conflicts, withdrawal and artifact access separately.
 
-## Design tokens
+## Tokens
 
 | Role | Value |
 | --- | --- |
-| Canvas / panel / raised surface | `#0c1420` / `#121e2d` / `#192838` |
-| Primary / secondary text | `#edf2f7` / `#b2c0ce` |
-| Quiet text / borders | `#93a7bc` / `#314358` |
-| Amber lead / amber surface | `#f4c16b` / `#30291f` |
-| Mint observation / mint surface | `#93d5bc` / `#19312d` |
-| Error / focus | `#ffb5ac` / `#b6d7ff` |
-| Spacing | 4, 8, 12, 16, 24, 32, 48 px |
-| Type | 12 px locator, 14 px table/body support, 16 px body, 24 px section, 38 px page title |
-| Radius | 4 px controls, 8 px panels; hierarchy comes from alignment and borders |
-| Interaction | 44 px primary control targets; visible 2 px focus ring; 140 ms state transitions |
+| Canvas / document | `#f5f6f4` / `#ffffff` |
+| Sidebar / selected navigation | `#202824` / `#35483d` |
+| Text / secondary / quiet | `#202623` / `#59645e` / `#647068` |
+| Border | `#d8ded9` |
+| Accent / accent surface | `#356b58` / `#e9f0eb` |
+| Sidebar text / secondary | `#ffffff` / `#c4cec7` |
+| Spacing | 4, 8, 12, 16, 24, 32, 36 px |
+| Type | 11 px locators, 13 px ledger, 15–16 px mobile body, 21 px sections, 36 px page title |
+| Radius | 5 px controls, 8 px document/ledger, 10 px modal |
+| Controls | 44 px primary/touch targets; 2 px focus ring; 150 ms pressed/hover feedback |
 
-Numeric columns align right; identifiers and monetary values use tabular figures. Risk labels always include words. Approved status is separate from signal evidence status. Main body text is at least 14 px; mobile body text is 16 px. Primary controls remain usable on touch devices.
+Prices remain IDR. English display formatting uses `240,000,000`; identifiers and numbers use tabular monospace. Proper source-system terms such as SIRUP, RUP, SSH, LPSE, PPID, APIP, BPK and RAB are preserved, with explanatory English copy.
 
-## Responsive and accessible behavior
+## Responsive and state behavior
 
-- At desktop widths the radar keeps its tabular structure and the case uses a broad evidence column plus a narrow source/action rail.
-- Below 900 px case and review columns stack; navigation and filter controls wrap. Below 640 px the radar becomes labeled cards rather than requiring horizontal table scrolling.
-- Graph is an illustrative SVG, accompanied by an actual HTML relationship table. No information depends on graph position, hover, or color.
-- Use a skip link, landmarks, native buttons/selects, visible labels, focus rings, `aria-current` navigation, live status announcements, and native dialogs with Escape support and restored focus.
-- Loading, retry, empty search, insufficient evidence, unavailable graph, and review-conflict/quarantine messaging belong to implementation acceptance; the preview illustrates the first five and local review success/error states.
-- Source dialogs contain fictional locators marked as samples. They are not fake links to real official documents. Default case data is invented and never reuses the PRD's unverified IDs/allegations.
+- At wide desktop sizes, a 216 px sidebar anchors the ledger/spotlight and document/evidence-rail layouts.
+- Below 1024 px the spotlight, evidence rail and review columns stack. Below 768 px the sidebar becomes compact horizontal navigation, all asymmetric content becomes one column, and ledger rows become labeled cards.
+- Search and agency/evidence filters keep explicit labels. State messages distinguish loading/access failure/empty results from evidence conclusions; there is no animated live-monitoring claim.
+- Use native controls, a skip link, focus rings, landmarks, live result counts and dialogs with Escape/return-focus behavior. The graph has a textual relationship table. Source/model text is inserted as text rather than interpreted HTML.
+- Source locators are fictional, not fabricated links to actual regulations. Draft downloads disclose synthetic identity, amounts, evidence limits and manual recipient/requester fields.
 
-## Review and later implementation
-
-Validate hierarchy and wording here before visual details become production components. Later reuse tokens and information hierarchy in the agreed React/Vite stack; keep application authorization, version checks, screening enforcement and cloud integrations in their proper backend boundaries. This draft adds no services or dependencies.
-
-No targeted external component inspiration was needed. Preview behavior and responsive checks are recorded in [validation](validation.md).
+No external component inspiration or added dependency was needed. [Validation notes](validation.md) state what was checked and the remaining browser-validation boundary.
