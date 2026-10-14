@@ -2,6 +2,8 @@
 
 Planning baseline: 2026-10-14, Asia/Jakarta. Status: ready to slice into implementation tickets; execution starts with the readiness gate below. No production code or infrastructure is created by this plan.
 
+The [GEASS demo specification](../.scratch/geass-wayfinding/spec.md) defines the product behavior and acceptance contracts derived from this plan and the resolved wayfinder map.
+
 The target is one reproducible, evidence-backed procurement investigation for one region/year, with a public reviewed view, a vendor evidence graph when accessible records support it, and downloadable draft dossiers. The full PRD remains the product vision, not the initial delivery commitment. The original four-day timeline is an aspiration, not an estimate; estimate tickets after the data and cloud gates establish their actual work.
 
 ## Decision record

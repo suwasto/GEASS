@@ -15,6 +15,7 @@ Record GEASS architecture choices as ADRs and produce a dependency-ordered build
 - Consult wayfinder, grilling, domain-modeling, and research. One human decision ticket spans the architecture boundary rounds; research tickets may resolve in the same session. No further human decision ticket is resolved here.
 - The user's standing-decision placeholder is not a stack instruction. Actual choices are recorded in the human decision answer and ADRs.
 - [Build plan](../../docs/geass-build-plan.md) describes delivery order and acceptance gates. It is not a set of implementation tickets.
+- Follow-on requested on 2026-10-14: [GEASS demo specification](spec.md) synthesizes the resolved map before project creation. The map remains resolved; this follow-on adds no architecture decision ticket or production code.
 
 ## Decisions so far
 
