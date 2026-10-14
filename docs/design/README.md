@@ -6,6 +6,10 @@ Status: design proposal, 2026-10-15. Redesigned with the **design-taste-frontend
 
 This is a static concept rendering, not a browser screenshot. The HTML also contains the investigation and reviewer screens.
 
+## Image references
+
+The [three fresh reference directions](options/README.md) are retained for design review: Civic Ledger, Signal Console, and Evidence Atlas. The suggested combination is Evidence Atlas for the public radar and Civic Ledger for case investigations; this remains a proposal until a direction is selected. The earlier [Code Geass palette concept](radar-code-geass-concept.png) is retained as a separate color reference. These images do not replace the specification or the interactive draft.
+
 ## Design direction
 
 - **Audience:** journalists, civic watchdogs and inspectors following evidence-backed procurement leads.
