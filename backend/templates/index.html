@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="GEASS procurement evidence workspace. Clearly labelled synthetic offline demonstration.">
+  <title>GEASS — Procurement evidence workspace</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#radar">Skip to procurement radar</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="Workspace information">
+    <a class="brand" href="/" aria-label="GEASS home"><span class="mark" aria-hidden="true">G</span><span>GEASS<small>Evidence workspace</small></span></a>
+    <div class="side-label">INVESTIGATE</div>
+    <a class="nav-link active" href="#radar"><span aria-hidden="true">◉</span> Procurement radar</a>
+    <a class="nav-link" href="#system"><span aria-hidden="true">⌁</span> Run & source status</a>
+    <div class="sidebar-note"><span class="side-label">THE EVIDENCE STANDARD</span><p>A signal starts a question.<br>Evidence supports the next step.</p><p>Planning ceilings are not actual spending. Price differences are not findings of wrongdoing.</p></div>
+    <div class="edition">PROTOTYPE / OFFLINE FIXTURES<br>No live cloud connection</div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span>Public procurement <span class="divider">/</span> Evidence desk</span><span class="status-pill"><i aria-hidden="true"></i> Offline demonstration</span></header>
+    <div class="demo-banner"><strong>SYNTHETIC DATA</strong><span>All packages, vendors and comparisons are fictional test fixtures. No live government records or cloud analysis.</span></div>
+    <main>
+      <section class="page-heading"><div><div class="eyebrow">01 / ABSURDITY & MARKUP RADAR</div><h1>Follow the evidence.</h1><p>Look beyond the package title. Inspect the numbers, consider the counterargument, and request the missing documents.</p></div><button id="run-button" class="button primary">Run offline analysis <span aria-hidden="true">↗</span></button></section>
+      <div class="overview"><div><span class="eyebrow">FILTERED PACKAGES</span><strong id="package-count">—</strong><span>synthetic records</span></div><div><span class="eyebrow">PRICE CALCULATION</span><strong class="metric-text">Deterministic</strong><span>Exact IDR arithmetic on the server</span></div><div><span class="eyebrow">READ EVERY SIGNAL AS</span><strong class="metric-text">A lead, not a verdict</strong><span>Counterevidence stays with the record</span></div></div>
+      <section id="radar" class="panel" aria-labelledby="radar-title">
+        <div class="panel-heading"><h2 id="radar-title">Procurement radar</h2><span class="quiet">2026 · Fixture dataset</span></div>
+        <form id="filters" class="filters" role="search">
+          <div class="search-field"><label for="search">Search packages</label><input id="search" name="search" type="search" placeholder="Package title, underlying item or ID"></div>
+          <div><label for="region">Region</label><select id="region" name="region"><option value="">All regions</option></select></div>
+          <div><label for="agency">Agency</label><select id="agency" name="agency"><option value="">All agencies</option></select></div>
+          <div><label for="anomaly_class">Signal</label><select id="anomaly_class" name="anomaly_class"><option value="">All signals</option><option>ABSURD</option><option>INDICATED MARKUP</option><option>SPECIFICATION LOCK</option><option>SPLIT PACKAGE</option><option>NORMAL</option></select></div>
+          <button class="button" type="submit">Apply filters</button>
+        </form>
+        <div id="radar-message" class="message" role="status">Loading packages…</div>
+        <div class="table-scroll"><table><caption class="sr-only">Synthetic procurement packages. Open a package to inspect its evidence. Caps are synthetic benchmarks, not real statutory SSH.</caption><thead><tr><th scope="col">Package / underlying item</th><th scope="col">Agency & region</th><th scope="col" class="numeric">Planning ceiling</th><th scope="col" class="numeric">Unit price / synthetic cap</th><th scope="col">Signal</th><th scope="col">Evidence</th></tr></thead><tbody id="package-rows"></tbody></table></div>
+        <div class="pagination"><span id="page-summary" class="quiet">—</span><div><button id="previous" class="button compact" disabled>← Previous</button><button id="next" class="button compact" disabled>Next →</button></div></div>
+      </section>
+      <section id="system" class="system-layout" aria-labelledby="system-title"><div class="panel system-panel"><div class="panel-heading"><h2 id="system-title">Source readiness</h2><span class="small-label">TRANSPARENT BY DEFAULT</span></div><div id="health" class="health-list"><p>Checking source status…</p></div></div><div class="panel system-panel"><div class="panel-heading"><h2>Run inspector</h2><span class="small-label">LOCAL EXECUTION</span></div><div id="run-status" role="status"><p>No run started in this session. Run offline analysis to inspect real local execution spans.</p></div><div id="run-spans"></div><p class="footnote">Fixture mode uses no Gemini, BigQuery, Model Armor or Cloud Trace calls.</p></div></section>
+      <footer>GEASS / Government Expenditure Anomaly & Syndicate Surveillance <span>Requests for information. Never allegations.</span></footer>
+    </main>
+  </div>
+</div>
+<dialog id="investigation" aria-labelledby="case-title"><div class="drawer-top"><span class="eyebrow">PACKAGE INVESTIGATION / SYNTHETIC FIXTURE</span><button id="close-case" class="button compact" aria-label="Close investigation">Close ×</button></div><div id="case-content"><h2 id="case-title">Loading investigation…</h2></div></dialog>
+<div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>
