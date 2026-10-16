@@ -1,6 +1,8 @@
 # Next wave: live evidence to deployment
 
-Date: 16 October 2026 (Asia/Jakarta). Status: planned, not executed.
+Date: 16 October 2026 (Asia/Jakarta). Status: public-source wave implemented locally; cloud stages pending.
+
+Execution update, 16 October 2026: public-source work has started with the owner's confirmation of Sukoharjo 2026 and public access only. Four SIRUP records, one explicit planning-to-non-tender link, and the official SSH PDF were captured locally. Bounded importers, source validation and local source browsing are implemented; see [current status](implementation-status.md) and [delivery settings](live-data/delivery-settings.md). No defensible package-price comparison or tender evaluation is established yet. Cloud project, paid-work authorization/spend limits, region and reviewer settings remain pending; cloud milestones are not marked complete.
 
 ## Starting point and target
 

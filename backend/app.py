@@ -4,6 +4,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 import json
 import os
+from ipaddress import ip_address
 from pathlib import Path
 import re
 from time import perf_counter
@@ -15,6 +16,9 @@ from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, ConfigDict, Field
+
+from backend.observations import load_snapshot
+from backend.execution import load_execution
 
 ROOT = Path(__file__).resolve().parent
 MONEY = r"^\d+(?:\.\d{1,2})?$"
@@ -114,6 +118,8 @@ def price_forensics(package):
 
 PACKAGES = load_packages()
 ANONYMIZE = os.getenv("GEASS_ANONYMIZE", "").lower() in {"1", "true", "yes"}
+OBSERVATIONS, OBSERVATION_VERSION = load_snapshot(os.environ["GEASS_OBSERVATIONS"]) if os.getenv("GEASS_OBSERVATIONS") else ([], None)
+OBSERVED_EXECUTION = load_execution(os.environ["GEASS_EXECUTION"]) if os.getenv("GEASS_EXECUTION") else None
 RUNS = {}
 app = FastAPI(title="GEASS — synthetic local prototype", version="0.1.0")
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
@@ -150,15 +156,68 @@ def package_summary(package):
             "price_forensics": price}
 
 
+def observation_view(observation):
+    result = observation.public_view()
+    if ANONYMIZE:
+        agencies = sorted({row.satker for row in OBSERVATIONS})
+        result["satker"] = f"Instansi {agencies.index(observation.satker) + 1:03d}"
+    if (OBSERVED_EXECUTION and observation.id_rup in OBSERVED_EXECUTION.rup_ids
+            and observation.satker == OBSERVED_EXECUTION.satker
+            and observation.tahun_anggaran == OBSERVED_EXECUTION.tahun_anggaran):
+        result["linkage"] = {"status": "verified_source_identifier", "tender_id": OBSERVED_EXECUTION.id,
+                             "kind": OBSERVED_EXECUTION.kind,
+                             "reason": "Explicit RUP identifier in the captured execution announcement; source scopes and year match.",
+                             "source": OBSERVED_EXECUTION.provenance.model_dump(mode="json")}
+    return result
+
+
+def local_capture_access(request):
+    # Source reuse and authenticated publication are not cleared for real captures yet.
+    try:
+        allowed = request.client is not None and ip_address(request.client.host).is_loopback
+    except ValueError:
+        allowed = False
+    if not allowed:
+        raise HTTPException(403, "Captured source observations are currently local-only")
+
+
+@app.get("/api/datasets")
+def datasets(request: Request):
+    try:
+        local_capture_access(request)
+        available = bool(OBSERVATIONS)
+    except HTTPException:
+        available = False
+    return {"default": "observed" if available else "fixture", "items": [
+        {"id": "observed", "label": "Captured public observations", "count": len(OBSERVATIONS),
+         "available": available, "synthetic": False, "version": OBSERVATION_VERSION,
+         "note": "Public source facts captured at the dates shown; not live monitoring or reviewed findings."},
+        {"id": "fixture", "label": "Synthetic demonstration", "count": len(PACKAGES),
+         "available": True, "synthetic": True, "version": "fixture-v1"}]}
+
+
 @app.get("/")
 def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={})
 
 
 @app.get("/api/packages")
-def list_packages(search: str = Query("", max_length=200), region: str = "", agency: str = "",
+def list_packages(request: Request, search: str = Query("", max_length=200), region: str = "", agency: str = "",
                   anomaly_class: Classification | None = None, page: int = Query(1, ge=1),
-                  page_size: int = Query(20, ge=1, le=100)):
+                  page_size: int = Query(20, ge=1, le=100), dataset: Literal["fixture", "observed"] = "fixture"):
+    if dataset == "observed":
+        local_capture_access(request)
+        if not OBSERVATIONS:
+            raise HTTPException(503, "No captured public observations are configured")
+        views = [observation_view(row) for row in OBSERVATIONS]
+        rows = [row for row in views if (not region or row["region"] == region)
+                and (not agency or row["satker"] == agency) and anomaly_class is None
+                and (not search or search.casefold() in " ".join(str(row.get(key) or "") for key in
+                     ("id_rup", "nama_paket", "description", "satker")).casefold())]
+        start = (page - 1) * page_size
+        return {"items": rows[start:start + page_size], "total": len(rows), "page": page, "page_size": page_size,
+                "regions": sorted({row["region"] for row in views}), "agencies": sorted({row["satker"] for row in views}),
+                "dataset": "observed", "snapshot_version": OBSERVATION_VERSION}
     rows = [p for p in PACKAGES if (not region or p.region == region)
             and (not agency or agency_name(p.satker) == agency)
             and (anomaly_class is None or package_summary(p)["classification"] == anomaly_class.value)
@@ -170,7 +229,13 @@ def list_packages(search: str = Query("", max_length=200), region: str = "", age
 
 
 @app.get("/api/packages/{id_rup}")
-def package_detail(id_rup: str):
+def package_detail(id_rup: str, dataset: Literal["fixture", "observed"] = "fixture", request: Request = None):
+    if dataset == "observed":
+        local_capture_access(request)
+        observation = next((row for row in OBSERVATIONS if row.id_rup == id_rup), None)
+        if observation is None:
+            raise HTTPException(404, "Package not found")
+        return observation_view(observation)
     package = find_package(id_rup)
     return {**package_summary(package), "supporting_evidence": [package_summary(package)["classification_reason"]],
             "counterevidence": ["Spesifikasi rinci, pajak, pengiriman, kebutuhan kegiatan, dan dokumen evaluasi nyata belum tersedia."],
@@ -180,7 +245,17 @@ def package_detail(id_rup: str):
 
 
 @app.get("/api/tenders/{tender_id}")
-def tender_detail(tender_id: str):
+def tender_detail(tender_id: str, dataset: Literal["fixture", "observed"] = "fixture", request: Request = None):
+    if dataset == "observed":
+        local_capture_access(request)
+        if OBSERVED_EXECUTION is None or OBSERVED_EXECUTION.id != tender_id:
+            raise HTTPException(404, "Execution observation not found")
+        result = OBSERVED_EXECUTION.model_dump(mode="json", exclude_none=False)
+        if ANONYMIZE:
+            result["satker"] = "Instansi pelaksana"
+            for index, participant in enumerate(result["participants"], 1):
+                participant["nama_peserta"] = f"Peserta {index}"
+        return result
     if tender_id != "DEMO-T001":
         raise HTTPException(404, "Tender not found")
     hps = Decimal("90000000")
@@ -203,7 +278,21 @@ def tender_detail(tender_id: str):
 
 
 @app.get("/api/tenders/{tender_id}/graph")
-def tender_graph(tender_id: str):
+def tender_graph(tender_id: str, dataset: Literal["fixture", "observed"] = "fixture", request: Request = None):
+    if dataset == "observed":
+        tender = tender_detail(tender_id, dataset=dataset, request=request)
+        nodes = [{"id": "execution:" + tender_id, "label": tender["nama_tender"], "type": tender["kind"]}]
+        edges = []
+        for identifier in tender["rup_ids"]:
+            nodes.append({"id": "rup:" + identifier, "label": "RUP " + identifier, "type": "planning"})
+            edges.append({"source": "rup:" + identifier, "target": "execution:" + tender_id,
+                          "label": "Explicit source RUP identifier"})
+        for participant in tender["participants"][:30]:
+            nodes.append({"id": participant["id"], "label": participant["nama_peserta"], "type": "observed_participant"})
+            edges.append({"source": "execution:" + tender_id, "target": participant["id"],
+                          "label": "Listed participant; bid/evaluation unavailable"})
+        return {"nodes": nodes, "edges": edges, "synthetic": False, "provenance": tender["provenance"],
+                "limitations": ["Observed source relationships only; no winner, bid evaluation, shared ownership or collusion finding."]}
     tender = tender_detail(tender_id)
     nodes = [{"id": "agency", "label": agency_name("Dinas Contoh A"), "type": "agency"},
              {"id": "DEMO-001", "label": "Paket DEMO-001", "type": "package"},
@@ -309,11 +398,23 @@ Provenans: fixture:packages.json, baris dengan id_rup {package.id_rup}; tahap cu
 @app.get("/api/health")
 def health():
     names = ["sirup", "lpse", "jdih", "bigquery", "gemini", "model_armor", "cloud_trace"]
-    return {"status": "degraded", "mode": "synthetic_fixture", "local_ready": True,
+    result = {"status": "degraded", "mode": "synthetic_fixture", "local_ready": True,
             "sources": {name: {"status": "not_connected", "reason": "Integrasi live belum dikonfigurasi atau diuji."} for name in names},
             "limitations": ["Semua data adalah contoh buatan, bukan data pengadaan nyata.",
                             "Tidak ada inference AI, proteksi Model Armor, atau Cloud Trace aktif.",
                             "Run dan span lokal disimpan sementara dalam memori proses."]}
+    if OBSERVATIONS:
+        result["mode"] = "captured_public_observations_and_separate_fixtures"
+        result["sources"]["sirup"] = {"status": "snapshot_loaded", "record_count": len(OBSERVATIONS),
+                                       "reason": "Captured public records; current upstream reachability is not probed by browsing.",
+                                       "snapshot_version": OBSERVATION_VERSION}
+        result["limitations"] = ["Public observations have not been analyzed or reviewed as risk findings.",
+                                  "Synthetic fixtures remain a separate demonstration dataset.",
+                                  "No live model, Model Armor, BigQuery or Cloud Trace integration is active."]
+    if OBSERVED_EXECUTION:
+        result["sources"]["lpse"] = {"status": "snapshot_loaded", "reason": "Public execution announcement captured; evaluations and winner unavailable.",
+                                     "kind": OBSERVED_EXECUTION.kind}
+    return result
 
 
 class RunRequest(BaseModel):

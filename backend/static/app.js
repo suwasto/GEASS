@@ -1,7 +1,7 @@
 /* All evidence comes from the same-origin API; browser code never calculates prices. */
 'use strict';
 const $ = id => document.getElementById(id);
-const state = {page: 1, pageSize: 5, request: 0, caseRequest: 0, opener: null};
+const state = {page: 1, pageSize: 5, request: 0, caseRequest: 0, opener: null, dataset: 'fixture'};
 const el = (tag, text, className) => {
   const node = document.createElement(tag);
   if (text !== undefined && text !== null) node.textContent = String(text);
@@ -48,6 +48,7 @@ async function loadPackages() {
   const query = new URLSearchParams(new FormData($('filters')));
   for (const [key, value] of Array.from(query)) if (!value) query.delete(key);
   query.set('page', state.page); query.set('page_size', state.pageSize);
+  query.set('dataset', state.dataset);
   $('package-rows').replaceChildren();
   $('radar-message').hidden = false;
   $('radar-message').classList.remove('error');
@@ -69,7 +70,7 @@ async function loadPackages() {
       agency.append(el('span', item.satker), el('span', item.region, 'subline'));
       const signal = el('td');
       signal.append(el('span', item.classification || 'Not assessed', 'badge' + (item.classification === 'NORMAL' ? ' normal' : '')));
-      const evidence = el('td'); evidence.append(el('span', item.synthetic ? 'Synthetic fixture' : item.evidence_status, 'quiet'));
+      const evidence = el('td'); evidence.append(el('span', item.synthetic ? 'Synthetic fixture' : 'Source observation', 'quiet'));
       const comparison = el('td', null, 'numeric');
       if (item.price_forensics?.status === 'grounded') {
         comparison.append(el('span', money(item.price_forensics.implied_unit_price)), el('span', 'Cap ' + money(item.price_forensics.benchmark_unit_price), 'subline'), el('span', 'Δ ' + money(item.price_forensics.delta_idr) + ' / ' + item.price_forensics.delta_percent + '%', 'subline'));
@@ -92,7 +93,7 @@ function section(title) {
 }
 function listEvidence(title, values) {
   const node = el('div'); node.append(el('h3', title));
-  if (!values || !values.length) node.append(el('p', 'No evidence recorded in this fixture.'));
+  if (!values || !values.length) node.append(el('p', 'No assessed evidence recorded.'));
   else {
     const list = el('ul');
     for (const value of values) list.append(el('li', readable(value)));
@@ -124,7 +125,7 @@ async function openCase(id, opener) {
   if (!dialog.open) dialog.showModal();
   $('close-case').focus();
   try {
-    const item = await api('/api/packages/' + encodeURIComponent(id));
+    const item = await api('/api/packages/' + encodeURIComponent(id) + '?dataset=' + state.dataset);
     if (!dialog.open || request !== state.caseRequest) return;
     renderCase(item);
   } catch (error) {
@@ -141,14 +142,15 @@ function renderCase(item) {
   if (item.normalized_item) content.append(el('p', 'Underlying item: ' + item.normalized_item));
   content.append(el('p', item.description));
   if (item.classification_reason) content.append(el('p', item.classification_reason));
-  content.append(el('div', 'Synthetic offline fixture. This record does not describe a real procurement case. A signal is a prompt for verification, not an allegation.', 'notice'));
+  $('case-scope').textContent = item.synthetic ? 'PACKAGE INVESTIGATION / SYNTHETIC FIXTURE' : 'SOURCE OBSERVATION / NOT ASSESSED';
+  content.append(el('div', item.synthetic ? 'Synthetic offline fixture. This record does not describe a real procurement case. A signal is a prompt for verification, not an allegation.' : 'Captured public planning record. It has not been analyzed or reviewed as a risk finding. This planning ceiling does not establish actual spending.', 'notice'));
   const actions = el('div', null, 'case-actions');
-  for (const [kind, label] of [['ppid', 'Download PPID request ↓'], ['audit', 'Download audit brief ↓']]) {
+  for (const [kind, label] of (item.dossier_available === false ? [] : [['ppid', 'Download PPID request ↓'], ['audit', 'Download audit brief ↓']])) {
     const link = el('a', label, 'button' + (kind === 'ppid' ? ' primary' : ''));
     link.href = '/api/packages/' + encodeURIComponent(item.id_rup) + '/dossier?kind=' + kind;
     link.setAttribute('download', ''); actions.append(link);
   }
-  content.append(actions, el('p', 'Draft Markdown documents only. Complete requester details and verify sources before use.', 'footnote'));
+  content.append(actions, el('p', item.dossier_available === false ? 'Dossiers are unavailable until the real evidence and assessment are reviewed.' : 'Draft Markdown documents only. Complete requester details and verify sources before use.', 'footnote'));
   const prices = section('01 / Deterministic price comparison'), price = item.price_forensics;
   prices.append(el('p', 'Planning ceiling: ' + money(item.total_pagu) + ' · Recorded volume: ' + readable(item.volume_pekerjaan)));
   if (price && price.status === 'grounded') {
@@ -161,22 +163,31 @@ function renderCase(item) {
     const source = el('details'); source.append(el('summary', 'Inspect benchmark source & applicability')); provenance(source, price.source); prices.append(source);
   } else prices.append(el('div', 'Ungrounded — ' + (price?.reason || 'A sufficiently comparable quantity or benchmark is unavailable. No price difference is calculated.'), 'notice'));
   content.append(prices);
+  if (item.spesifikasi_pekerjaan) {
+    const specs = section('Recorded specification'); specs.append(el('p', item.spesifikasi_pekerjaan)); content.append(specs);
+  }
   const reasoning = section('02 / Evidence & counterevidence');
   const columns = el('div', null, 'evidence-columns'); columns.append(listEvidence('Supporting evidence', item.supporting_evidence), listEvidence('Counterevidence / limitations', item.counterevidence));
   reasoning.append(columns); content.append(reasoning);
-  const execution = section('03 / Tender execution'); content.append(execution);
+  const execution = section('03 / Procurement execution'); content.append(execution);
   if (item.linkage?.tender_id) {
-    execution.append(el('p', 'Linkage status: ' + item.linkage.status + '. This is a synthetic fixture relationship.'));
+    execution.append(el('p', 'Linkage status: ' + item.linkage.status + '. ' + (item.synthetic ? 'This is a synthetic fixture relationship.' : item.linkage.reason)));
     loadTender(item.linkage.tender_id, execution);
   } else execution.append(el('div', 'No demonstrated planning-to-execution link. No tender or vendor relationship is inferred for this package.', 'notice'));
   const sources = section('04 / Provenance'); provenance(sources, item.provenance); content.append(sources);
+  if (item.provenance?.retrieved_at) sources.append(el('p', 'Captured: ' + new Intl.DateTimeFormat('en-GB', {dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Jakarta'}).format(new Date(item.provenance.retrieved_at)) + ' (Asia/Jakarta)'));
   if (item.review_status) sources.append(el('p', 'Review status: ' + item.review_status));
 }
 async function loadTender(id, container) {
   const target = el('div'); target.append(el('p', 'Loading tender evidence…')); container.append(target);
   try {
-    const tender = await api('/api/tenders/' + encodeURIComponent(id));
+    const tender = await api('/api/tenders/' + encodeURIComponent(id) + '?dataset=' + state.dataset);
     target.replaceChildren(el('h3', tender.nama_tender || id));
+    if (!tender.synthetic) {
+      target.append(el('div', (tender.kind === 'non_tender' ? 'Non-tender procurement' : 'Tender procurement') + ' · Recorded stage: ' + readable(tender.stage) + '. A listed participant is not evidence of a bid or award.', 'notice'));
+      target.append(el('p', 'Source coverage: ' + readable(tender.coverage)));
+      const source = el('details'); source.append(el('summary', 'Execution source & capture')); provenance(source, tender.provenance); target.append(source);
+    }
     if (tender.hps !== undefined) target.append(el('p', 'HPS: ' + money(tender.hps)));
     if (tender.signals?.length) target.append(listEvidence('Execution signals — require verification', tender.signals));
     const wrapper = el('div', null, 'table-scroll'), table = el('table', null, 'tender-table'), head = el('thead'), row = el('tr');
@@ -206,12 +217,12 @@ function svg(tag, attributes, text) {
 async function loadGraph(id, target) {
   const status = el('p', 'Loading relationships…'); target.append(status);
   try {
-    const data = await api('/api/tenders/' + encodeURIComponent(id) + '/graph'); status.remove();
+    const data = await api('/api/tenders/' + encodeURIComponent(id) + '/graph?dataset=' + state.dataset); status.remove();
     const nodes = (data.nodes || []).slice(0, 18), ids = new Set(nodes.map(node => node.id));
     const edges = (data.edges || []).filter(edge => ids.has(edge.source) && ids.has(edge.target)).slice(0, 40);
     if (!nodes.length) {target.append(el('p', 'No graph evidence available.')); return;}
     const height = Math.max(260, Math.ceil(nodes.length / 3) * 110 + 50);
-    const graph = svg('svg', {viewBox: `0 0 780 ${height}`, role: 'img', 'aria-label': 'Synthetic tender relationship graph. All relationships are listed in the table below.', class: 'graph'});
+    const graph = svg('svg', {viewBox: `0 0 780 ${height}`, role: 'img', 'aria-label': (data.synthetic ? 'Synthetic tender' : 'Observed source') + ' relationship graph. All relationships are listed in the table below.', class: 'graph'});
     const positions = new Map(nodes.map((node, i) => [node.id, {x: 35 + (i % 3) * 255, y: 35 + Math.floor(i / 3) * 110}]));
     for (const edge of edges) {
       const a = positions.get(edge.source), b = positions.get(edge.target);
@@ -223,7 +234,7 @@ async function loadGraph(id, target) {
       group.append(svg('text', {x: pos.x + 12, y: pos.y + 24}, node.label.length > 29 ? node.label.slice(0, 27) + '…' : node.label));
       group.append(svg('text', {x: pos.x + 12, y: pos.y + 45, class: 'edge-label'}, node.type)); graph.append(group);
     }
-    target.append(graph, el('p', 'Synthetic relationships only. Shared identifiers are candidates for manual review, not proof of affiliation or collusion.', 'graph-caption'));
+    target.append(graph, el('p', data.synthetic ? 'Synthetic relationships only. Shared identifiers are candidates for manual review, not proof of affiliation or collusion.' : 'Source identifier and listed participant relationships only. No bid evaluation, winner, shared ownership or collusion finding.', 'graph-caption'));
     if (data.nodes.length > nodes.length || data.edges.length > edges.length) target.append(el('p', 'View limited to 18 nodes and 40 relationships for readability.', 'graph-caption'));
     const details = el('details'); details.open = true; details.append(el('summary', 'Accessible relationship table'));
     const wrapper = el('div', null, 'table-scroll'), table = el('table', null, 'tender-table'), head = el('thead'), tr = el('tr');
@@ -255,7 +266,7 @@ async function runFixture() {
     }
     announce('Offline fixture run ' + run.status + '.'); loadPackages();
   } catch (error) { errorMessage($('run-status'), error.message, runFixture); }
-  finally { button.disabled = false; button.textContent = 'Run offline analysis ↗'; }
+  finally { button.disabled = state.dataset === 'observed'; button.textContent = state.dataset === 'observed' ? 'Analysis not connected' : 'Run synthetic demo'; }
 }
 $('filters').onsubmit = event => { event.preventDefault(); state.page = 1; loadPackages(); };
 for (const id of ['region', 'agency', 'anomaly_class']) $(id).onchange = () => { state.page = 1; loadPackages(); };
@@ -264,4 +275,31 @@ $('next').onclick = () => { state.page++; loadPackages(); };
 $('run-button').onclick = runFixture;
 $('close-case').onclick = () => $('investigation').close();
 $('investigation').addEventListener('close', () => { state.caseRequest++; if (state.opener?.isConnected) state.opener.focus(); });
-loadPackages(); loadHealth();
+function selectDataset() {
+  state.dataset = $('dataset').value; state.page = 1;
+  if ($('investigation').open) $('investigation').close();
+  for (const id of ['region', 'agency']) {
+    const select = $(id); while (select.options.length > 1) select.remove(1); select.value = '';
+  }
+  const observed = state.dataset === 'observed';
+  $('anomaly_class').value = ''; $('anomaly_class').disabled = observed;
+  $('run-button').disabled = observed;
+  $('run-button').textContent = observed ? 'Analysis not connected' : 'Run synthetic demo';
+  $('dataset-status').textContent = observed ? 'Captured public records' : 'Offline demonstration';
+  $('dataset-label').textContent = observed ? 'PUBLIC SOURCE CAPTURE' : 'SYNTHETIC DATA';
+  $('dataset-notice').textContent = observed ? 'Sukoharjo 2026 planning facts at the capture dates shown. Not live monitoring, risk findings, or proof of spending.' : 'All packages, vendors and comparisons in this dataset are fictional fixtures. No government analysis is claimed.';
+  $('record-label').textContent = observed ? 'captured observations' : 'synthetic records';
+  loadPackages();
+}
+async function initializeDatasets() {
+  try {
+    const data = await api('/api/datasets'); $('dataset').replaceChildren();
+    for (const source of data.items) {
+      const option = el('option', `${source.label} (${source.count})`); option.value = source.id;
+      option.disabled = !source.available; $('dataset').append(option);
+    }
+    $('dataset').value = data.default; $('dataset').disabled = false; selectDataset();
+  } catch (error) { errorMessage($('radar-message'), 'Source information unavailable. ' + error.message, initializeDatasets); }
+}
+$('dataset').onchange = selectDataset;
+initializeDatasets(); loadHealth();

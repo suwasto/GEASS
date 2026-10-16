@@ -71,6 +71,6 @@ def test_insufficient_benchmark_never_publishes_normal():
     assert summary["classification"] is None
     assert summary["scenario_classification"] == "NORMAL"
     assert summary["evidence_status"] == "insufficient_evidence"
-    result = list_packages(search="", region="", agency="", anomaly_class=Classification.NORMAL, page=1, page_size=20)
+    result = list_packages(request=None, search="", region="", agency="", anomaly_class=Classification.NORMAL, page=1, page_size=20)
     assert [row["id_rup"] for row in result["items"]] == ["DEMO-006"]
     assert "Sinyal triase contoh: NORMAL" not in dossier("DEMO-007", "audit").body.decode()
